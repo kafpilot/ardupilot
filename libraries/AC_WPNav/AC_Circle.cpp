@@ -22,6 +22,10 @@ const AP_Param::GroupInfo AC_Circle::var_info[] = {
     // @Increment: 1
     // @User: Standard
     AP_GROUPINFO("RATE",    1, AC_Circle, _rate,    AC_CIRCLE_RATE_DEFAULT),
+    
+    AP_GROUPINFO("CENTER_X",    2, AC_Circle,_center_x,    AC_CIRCLE_CENTER_X_DEFAULT),
+
+    AP_GROUPINFO("CENTER_Y",    3, AC_Circle,_center_y,    AC_CIRCLE_CENTER_Y_DEFAULT),
 
     AP_GROUPEND
 };
@@ -82,9 +86,10 @@ void AC_Circle::init()
     const Vector3f& stopping_point = _pos_control.get_pos_target();
 
     // set circle center to circle_radius ahead of stopping point
-    _center.x = stopping_point.x + _radius * _ahrs.cos_yaw();
-    _center.y = stopping_point.y + _radius * _ahrs.sin_yaw();
+    _center.x = _center_x;
+    _center.y = _center_y;
     _center.z = stopping_point.z;
+
 
     // calculate velocities
     calc_velocities(true);
@@ -115,7 +120,28 @@ void AC_Circle::update()
         if (dt >= 0.2f) {
             dt = 0.0f;
         }
+        
+        Vector3f curr_pos = _inav.get_position();
+        //const Vector3f & curr_vel = _inav.get_velocity();
+        // calc vector from current location to circle center
+        Vector2f vec;   // vector from circle center to current location
+        vec.x = (curr_pos.x - _center.x);
+        vec.y = (curr_pos.y - _center.y);
+        float dist = norm(vec.x, vec.y); // r
+        float distt = ((dist)-_radius)/100.0f;
+        float theta = atan2f(vec.y,vec.x);
+        float velocity_xy = _inav.get_velocity_xy();
 
+        //GCS_MAVLINK::send_statustext_chan(MAV_SEVERITY_WARNING, chan, "Invalid fence point, lat or lng too large");
+        //std::string string = std::to_string(distt);
+        //const char *distt_string = string.c_str();
+        //gcs_send_text(MAV_SEVERITY_INFO,distt_string);
+
+        float psi_d = theta + M_PI_2 + atanf(0.6*distt);
+        //_yaw = wrap_PI(psi_d)* AC_CIRCLE_DEGX100;
+        float psi_cmd = wrap_PI(psi_d);
+        
+        
         // ramp angular velocity to maximum
         if (_angular_vel < _angular_vel_max) {
             _angular_vel += fabsf(_angular_accel) * dt;
@@ -136,15 +162,24 @@ void AC_Circle::update()
         if (!is_zero(_radius)) {
             // calculate target position
             Vector3f target;
-            target.x = _center.x + _radius * cosf(-_angle);
-            target.y = _center.y - _radius * sinf(-_angle);
+            //target.x = curr_pos.x + _angular_vel*_radius*cosf(-angle_change)*dt;
+            //target.y = curr_pos.y + _angular_vel*_radius*cosf(-angle_change)*dt;
+            target.x = curr_pos.x + 10.0f*angle_change*_radius*cosf(psi_cmd);
+            target.y = curr_pos.y + 10.0f*angle_change*_radius*sinf(psi_cmd);
+            ////////////////////////////////////////////////////////
+
+
+            //Vector3f target;
+            //target.x = _center.x + _radius * cosf(-_angle);
+            //target.y = _center.y - _radius * sinf(-_angle);
             target.z = _pos_control.get_alt_target();
 
             // update position controller target
             _pos_control.set_xy_target(target.x, target.y);
 
             // heading is 180 deg from vehicles target position around circle
-            _yaw = wrap_PI(_angle-M_PI) * AC_CIRCLE_DEGX100;
+            //_yaw = wrap_PI(_angle-M_PI) * AC_CIRCLE_DEGX100;
+            _yaw = wrap_PI(psi_cmd+M_PI_2)* AC_CIRCLE_DEGX100;
         }else{
             // set target position to center
             Vector3f target;
@@ -156,7 +191,7 @@ void AC_Circle::update()
             _pos_control.set_xy_target(target.x, target.y);
 
             // heading is same as _angle but converted to centi-degrees
-            _yaw = _angle * AC_CIRCLE_DEGX100;
+            _yaw = wrap_PI(psi_cmd)* AC_CIRCLE_DEGX100;
         }
 
         // update position controller
