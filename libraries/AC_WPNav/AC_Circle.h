@@ -33,7 +33,10 @@ public:
 
     /// get_circle_center in cm from home
     const Vector3f& get_center() const { return _center; }
-
+    
+    float get_center_x() const { return _center_x; }
+    float get_center_y() const { return _center_y; }
+    
     /// get_radius - returns radius of circle in cm
     float get_radius() { return _radius; }
     /// set_radius - sets circle radius in cm
@@ -88,7 +91,9 @@ private:
     // parameters
     AP_Float    _radius;        // maximum horizontal speed in cm/s during missions
     AP_Float    _rate;          // rotation speed in deg/sec
-
+    AP_Float    _center_x;
+    AP_Float    _center_y;
+    
     // internal variables
     Vector3f    _center;        // center of circle in cm from home
     float       _yaw;           // yaw heading (normally towards circle center)
