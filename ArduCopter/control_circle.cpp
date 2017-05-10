@@ -1,4 +1,5 @@
 #include "Copter.h"
+#include <string>
 
 /*
  * Init and run calls for circle flight mode
@@ -64,8 +65,19 @@ void Copter::circle_run()
         }
 
         // get pilot desired climb rate
-        target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
-
+        // target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
+        
+        Vector3f vel_NED;
+        ahrs.get_velocity_NED(vel_NED);
+        //float circle_rate = circle_nav->get_rate();
+        float radius = circle_nav->get_radius();
+        float dt = pos_control->time_since_last_xy_update();
+        float xy_speed = wp_nav->get_speed_xy();
+        //target_climb_rate = (1*0.5/(M_2PI*radius))*norm(vel_NED.x, vel_NED.y);
+        target_climb_rate = 50.0f*0.5*dt*(xy_speed)/(M_2PI*radius*0.1);
+        std::string string = std::to_string(target_climb_rate);
+        const char *climb_rate_string = string.c_str();
+        
         // check for pilot requested take-off
         if (ap.land_complete && target_climb_rate > 0) {
             // indicate we are taking off
