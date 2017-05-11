@@ -13,6 +13,10 @@
 
 #define AC_CIRCLE_DEGX100           5729.57795f // constant to convert from radians to centi-degrees
 
+#define AC_CIRCLE_CENTER_X_DEFAULT            0.0f
+
+#define AC_CIRCLE_CENTER_Y_DEFAULT            0.0f
+
 class AC_Circle
 {
 public:
