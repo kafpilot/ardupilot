@@ -1,5 +1,5 @@
 #include "Copter.h"
-#include <string>
+//#include <string>
 
 /*
  * Init and run calls for circle flight mode
@@ -75,8 +75,8 @@ void Copter::circle_run()
         float xy_speed = wp_nav->get_speed_xy();
         //target_climb_rate = (1*0.5/(M_2PI*radius))*norm(vel_NED.x, vel_NED.y);
         target_climb_rate = 50.0f*0.5*dt*(xy_speed)/(M_2PI*radius*0.1);
-        std::string string = std::to_string(target_climb_rate);
-        const char *climb_rate_string = string.c_str();
+        //std::string string = std::to_string(target_climb_rate);
+        //const char *climb_rate_string = string.c_str();
         
         // check for pilot requested take-off
         if (ap.land_complete && target_climb_rate > 0) {
